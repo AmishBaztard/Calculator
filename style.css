@@ -1,0 +1,106 @@
+/* Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@200;300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@200;300;400;500;600&family=Roboto&display=swap');
+
+
+/* =============================
+GLOBAL SETUP
+============================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html {
+  font-size: 16px;
+}
+body {
+  font-family: 'Barlow Condensed', sans-serif;
+  color: rgb(92, 92, 92);
+}
+
+/* Block component */
+.header {
+  margin-top: 5.75rem;
+}
+.calculator {
+  width: 400px;
+  height: 573px;
+  background: #4EB79E;
+  border-radius: 1rem;
+
+  margin: 1rem auto 0 auto;
+  padding: 1.5rem 1.5rem;
+}
+.github {
+  display: flex;
+  width: 500px;
+  margin: 4rem auto;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+/* Block Elements */
+.header__copy {
+  font-size: 3rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.calculator__result {
+  width: 352px;
+  min-height: 73px;
+  background: #dfdfdf;
+  border-radius: 0.25rem;
+
+  font-size: 2rem;
+
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+}
+.calculator__result__prev {
+  font-size: 1rem;
+}
+.calculator__result__current {
+  font-size: 2rem;
+}
+.calculator__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+
+  margin-top: 1.75rem;
+}
+.calculator__button {
+  flex-basis: 22%;
+  height: 74px;
+  background: #eeeded;
+  border-radius: 0.25rem;
+  border: none;
+
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+
+  margin-bottom: 0.75rem;
+}
+.calculator__button:hover {
+  background: #4EC9CF;
+  cursor: pointer;
+}
+.github__link {
+  color: rgb(92, 92, 92);
+  font-size: 1.5rem;
+}
+.github__link:active, .github__link:visited {
+  color: rgb(92, 92, 92);
+}
+
+/* Modifiers */
+.calculator__button--large {
+  flex-basis: 48%;
+  background: #e6e6e6;
+}
+.calculator__button--border {
+  border: 2px solid yellow;
+}
