@@ -1,150 +1,209 @@
-'use strict';
-const calculatorResultCurrent = document.querySelector('.calculator__result__current');
-const calculatorResultPrev = document.querySelector('.calculator__result__prev');
-const buttons = document.querySelector(".calculator__buttons");
-const clearAll = document.querySelector("[data-action='clearAll']");
-let current = 0;
-let inputStack = [];
-let currentOperation = false;
-let prevText;
+const calculatorButtons = document.querySelector('.calculator__buttons');
+const currentView = document.querySelector('#currentResult');
+const operatorView = document.querySelector('#currentOperation');
+const previousView = document.querySelector('#prevResult');
+const MAXRESULTLENGTH = 8;
+const MAXDECIMALLENGTH = 3;
 
-const operations = {
-  AC: (el) => clearContent(el),
-  plus: function (...args) {
-    let sum = 0;
-    for (let x of args) {
-      sum = +sum + +x;
+const wholeToDecimal = (num, length = 0) => (num / (10 ** length)).toFixed(length);
+const getNumberLength = (x) => Math.ceil(Math.log10(x + 1));
+
+const calculator = {
+  inputs: [{
+    integer: 0,
+    decimal: 0,
+    decimalLength: 0,
+  }],
+  decimalMode: false,
+  queuedOperation: undefined,
+  lastAction: undefined,
+  getFormatted(index) {
+    const [current, previous] = this.inputs;
+    let result = 0;
+    if (index === 'current') {
+      result = (current.decimalLength)
+        ? (current.integer
+          + Number(wholeToDecimal(current.decimal, current.decimalLength))
+        ).toFixed(current.decimalLength)
+        : current.integer;
+    } else if (index === 'previous') {
+      result = (previous.decimalLength)
+        ? (previous.integer
+          + Number(wholeToDecimal(previous.decimal, previous.decimalLength))
+        ).toFixed(previous.decimalLength)
+        : previous.integer;
     }
-
-    return sum;
+    return result;
   },
-  minus: function (...args) {
-    let sum = args[0];
-    for (let i = 1; i < args.length; i++) {
-      sum -= +args[i];
+  getValue(index) {
+    const [current, previous] = this.inputs;
+    let result = 0;
+    if (index === 'current') {
+      result = current.integer + Number(wholeToDecimal(current.decimal, current.decimalLength));
+    } else if (index === 'previous') {
+      result = previous.integer + Number(wholeToDecimal(previous.decimal, previous.decimalLength));
     }
-
-    return sum;
+    return result;
   },
-  division: function (...args) {
-    let sum = args[0];
-    for (let i = 1; i < args.length; i++) {
-      sum /= +args[i];
-    }
+  checkValidLength() {
+    const [current] = this.inputs;
+    const result = (
+      (getNumberLength(current.integer) < MAXRESULTLENGTH && !calculator.decimalMode)
+      || (current.decimalLength < MAXDECIMALLENGTH && calculator.decimalMode)
+    );
 
-    return sum;
+    return result;
   },
-  sum: (input, op) => {
-    if (!op) return 0;
+  resetCurrent() {
+    const [current] = this.inputs;
+    current.integer = 0;
+    current.decimal = 0;
+    current.decimalLength = 0;
+  },
+  removePrevious() {
+    return this.inputs.length > 1 ? this.inputs.pop() : null;
+  },
+};
 
-    let sum = +op(...input);
-    let currentSplit = sum.toString().split('.');
-    if (currentSplit[0].length > 8) {
-      sum = "ERR";
-    } else if (currentSplit[1] && currentSplit[1].length > 3) {
-      sum = +sum.toFixed(3);
+const inverse = (x) => x * -1;
+const concatenateNumbers = (x, y) => x * 10 + y;
+const add = (x, y) => x + y;
+const subtract = (x, y) => x - y;
+const division = (x, y) => x / y;
+
+const operations = new Map([
+  ['+', add],
+  ['-', subtract],
+  ['/', division],
+]);
+const doOperation = (x, y, op) => operations.get(op)(x, y);
+
+const calculatorActions = {
+  clearAll() {
+    calculator.removePrevious();
+    calculator.resetCurrent();
+    calculator.decimalMode = false;
+    currentView.textContent = 0;
+    previousView.textContent = '';
+    operatorView.textContent = '';
+
+    calculator.queuedOperation = undefined;
+  },
+  clear() {
+    if (calculator.queuedOperation) {
+      const [current] = calculator.inputs;
+      const previous = calculator.removePrevious();
+      current.integer = previous.integer ? previous.integer : 0;
+      current.decimal = previous.decimal ? previous.decimal : 0;
+      current.decimalLength = previous.decimalLength ? previous.decimalLength : 0;
+      calculator.queuedOperation = undefined;
+      calculator.decimalMode = Boolean(previous.decimal);
+
+      operatorView.textContent = '';
+      previousView.textContent = '';
+      currentView.textContent = calculator.getFormatted('current');
+    } else {
+      this.clearAll();
+    }
+  },
+  inverse() {
+    const [current] = calculator.inputs;
+    current.integer = inverse(current.integer);
+    current.decimal = inverse(current.decimal);
+    currentView.textContent = calculator.getFormatted('current');
+  },
+  decimal() {
+    calculator.decimalMode = true;
+    const [current] = calculator.inputs;
+    currentView.textContent = `${current.integer}.`;
+  },
+  evaluate() {
+    const [current, previous] = calculator.inputs;
+    const decimalLength = Math.max(current.decimalLength, previous.decimalLength);
+
+    const evaluated = doOperation(
+      calculator.getValue('previous'),
+      calculator.getValue('current'),
+      calculator.queuedOperation,
+    );
+    const evaluatedDecimal = evaluated.toString().split('.')[1] ? evaluated.toString().split('.')[1].length : 0;
+    const result = decimalLength
+      ? evaluated.toFixed(decimalLength)
+      : evaluated.toFixed(evaluatedDecimal);
+
+    calculator.inputs.pop(); // remove previous
+    const [integer, decimal] = result.toString().split('.');
+    current.integer = Number(integer);
+    current.decimal = decimal ? Number(decimal) : 0;
+
+    // if integer is a negative then decimal must be one too
+    if (Object.is(Number(integer), -0) || Number(integer) < 0) {
+      current.decimal *= -1;
+    }
+    current.decimalLength = decimal ? decimal.length : 0;
+    calculator.queuedOperation = undefined;
+    calculator.lastAction = 'evaluate';
+
+    currentView.textContent = calculator.getValue('current');
+    operatorView.textContent = '';
+    previousView.textContent = '';
+  },
+};
+
+const performCalculatorAction = (action) => calculatorActions[action]();
+
+const queueCalculatorOperation = (operation) => {
+  if (calculator.queuedOperation) {
+    performCalculatorAction('evaluate');
+  }
+  const [current] = calculator.inputs;
+  calculator.queuedOperation = operation;
+  calculator.inputs.push({
+    integer: current.integer,
+    decimal: current.decimal,
+    decimalLength: current.decimalLength,
+  });
+  calculator.resetCurrent();
+  calculator.decimalMode = false;
+
+  currentView.textContent = 0;
+  operatorView.textContent = operation;
+  previousView.textContent = calculator.getFormatted('previous');
+};
+
+const updateCalculatorInput = (val) => {
+  const [current] = calculator.inputs;
+  let newVal = 0;
+  if (calculator.decimalMode) {
+    newVal = concatenateNumbers(current.decimal, val);
+    current.decimal = newVal;
+    current.decimalLength += 1;
+  } else {
+    if (calculator.lastAction === 'evaluate') { // resets input if no operations after evaluation
+      current.integer = 0;
+      calculator.lastAction = undefined;
     }
 
-    return sum;
+    newVal = concatenateNumbers(current.integer, val);
+    current.integer = newVal;
+  }
+  currentView.textContent = calculator.getFormatted('current');
+};
+
+const handleClickedCalcButton = (e) => {
+  const target = e.target.closest('button');
+  if (!target) return;
+
+  const { action, operation } = target.dataset;
+  if (action) {
+    performCalculatorAction(action);
+  } else if (operation) {
+    queueCalculatorOperation(operation);
+  } else {
+    if (!calculator.checkValidLength()) return;
+
+    const val = Number(target.textContent);
+    updateCalculatorInput(val);
   }
 };
-buttons.addEventListener('click', (e) => {
-  if (e.target.tagName !== "BUTTON") return;
-
-  let action = e.target.dataset.action ? e.target.dataset.action : null;
-  let textVal;
-
-  if (current == "ERR" && action != "clearAll") {
-    clearAll.classList.add('calculator__button--border');
-    return;
-  } else {
-    clearAll.classList.remove('calculator__button--border');
-  }
-
-  if (action == "clearAll") {
-    inputStack = [];
-    current = 0;
-    prevText = "";
-    textVal = 0;
-  } else if (action == "clear") {
-    if (current === 0 && currentOperation) {
-      currentOperation = null;
-      current = inputStack.pop();
-      prevText = "";
-      textVal = current;
-    } else {
-      current = 0;
-      textVal = current;
-    }
-  }
-  else if (action == "decimal") {
-    if (current.toString().indexOf(".") > -1) return;
-
-    current = current + ".";
-    textVal = current;
-  }
-  else if (action == "inverse") {
-    current -= current * 2;
-    textVal = current;
-  }
-  else if (action === "sum") {
-    if (current === 0) {
-      current = inputStack[0];
-    }
-
-    inputStack.push(current);
-    current = operations.sum(inputStack, currentOperation);
-    inputStack = [];
-    prevText = "";
-    textVal = current;
-  }
-  else if (action) {
-    if (inputStack.length >= 1) {
-      if (current === 0) {
-        current = inputStack[0];
-      }
-
-      inputStack.push(current);
-      current = operations.sum(inputStack, currentOperation);
-      inputStack = [];
-    }
-
-    if (current == "ERR") {
-      inputStack = [];
-      prevText = '';
-      textVal = "ERR";
-    } else {
-
-      prevText = current + e.target.textContent
-      currentOperation = operations[action];
-      inputStack.push(current);
-      current = 0;
-      textVal = '';
-
-    }
-  }
-  else {
-    let currentSplit = current.toString().split('.');
-    if (currentSplit[0].length < 8) {
-      let val = +e.target.textContent;
-      if (current.toString().indexOf(".") !== -1) {
-        let num = current + val;
-        if (currentSplit[1].length < 3) {
-          current = current + val;
-        }
-
-      }
-      else if (current < 0) {
-        current *= 10;
-        current -= val;
-      }
-      else {
-        current *= 10;
-        current += val;
-      }
-    }
-    textVal = current;
-  }
-  calculatorResultPrev.textContent = prevText;
-  calculatorResultCurrent.textContent = textVal;
-});
+calculatorButtons.addEventListener('click', handleClickedCalcButton);

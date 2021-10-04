@@ -13,8 +13,9 @@
   </header>
   <main class="calculator">
     <div class="calculator__result">
-      <div class="calculator__result__prev"></div>
-      <div class="calculator__result__current"></div>
+      <div class="calculator__result__prev" id="prevResult"></div>
+      <div class="calculator__result__operation" id="currentOperation"></div>
+      <div class="calculator__result__current" id="currentResult"></div>
     </div>
     <section class="calculator__buttons">
       <button class="calculator__button calculator__button--large" data-action="clear">C</button>
@@ -23,22 +24,22 @@
       <button class="calculator__button">7</button>
       <button class="calculator__button">8</button>
       <button class="calculator__button">9</button>
-      <button class="calculator__button" data-action="division">/</button>
+      <button class="calculator__button" data-operation="/">/</button>
 
       <button class="calculator__button">4</button>
       <button class="calculator__button">5</button>
       <button class="calculator__button">6</button>
-      <button class="calculator__button" data-action="minus">-</button>
+      <button class="calculator__button" data-operation="-">-</button>
 
       <button class="calculator__button">1</button>
       <button class="calculator__button">2</button>
       <button class="calculator__button">3</button>
-      <button class="calculator__button" data-action="plus">+</button>
+      <button class="calculator__button" data-operation="+">+</button>
 
       <button class="calculator__button" data-action="inverse">+/-</button>
       <button class="calculator__button">0</button>
       <button class="calculator__button" data-action="decimal">.</button>
-      <button class="calculator__button" data-action="sum">=</button>
+      <button class="calculator__button" data-action="evaluate">=</button>
     </section>
     
   </main>
@@ -46,6 +47,6 @@
     <img src="./github-logo.png" />
     <a href="https://github.com/AmishBaztard/Calculator" class="github__link">https://github.com/AmishBaztard/Calculator</a>
   </footer>
-  <script src="./script.js"></script>
+  <script src="./script.js" type="module"></script>
 </body>
 </html>
