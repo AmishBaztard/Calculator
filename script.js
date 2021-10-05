@@ -2,8 +2,8 @@ const calculatorButtons = document.querySelector('.calculator__buttons');
 const currentView = document.querySelector('#currentResult');
 const operatorView = document.querySelector('#currentOperation');
 const previousView = document.querySelector('#prevResult');
-const MAXRESULTLENGTH = 8;
-const MAXDECIMALLENGTH = 3;
+const MAX_RESULT_LENGTH = 8;
+const MAX_DECIMAL_LENGTH = 3;
 
 const wholeToDecimal = (num, length = 0) => (num / (10 ** length)).toFixed(length);
 const getNumberLength = (x) => Math.ceil(Math.log10(x + 1));
@@ -48,8 +48,8 @@ const calculator = {
   checkValidLength() {
     const [current] = this.inputs;
     const result = (
-      (getNumberLength(current.integer) < MAXRESULTLENGTH && !calculator.decimalMode)
-      || (current.decimalLength < MAXDECIMALLENGTH && calculator.decimalMode)
+      (getNumberLength(current.integer) < MAX_RESULT_LENGTH && !calculator.decimalMode)
+      || (current.decimalLength < MAX_DECIMAL_LENGTH && calculator.decimalMode)
     );
 
     return result;
@@ -66,15 +66,17 @@ const calculator = {
 };
 
 const inverse = (x) => x * -1;
-const concatenateNumbers = (x, y) => x * 10 + y;
+const chainNumbers = (x, y) => x * 10 + y;
 const add = (x, y) => x + y;
 const subtract = (x, y) => x - y;
 const division = (x, y) => x / y;
+const multiplication = (x, y) => x * y;
 
 const operations = new Map([
   ['+', add],
   ['-', subtract],
   ['/', division],
+  ['*', multiplication],
 ]);
 const doOperation = (x, y, op) => operations.get(op)(x, y);
 
@@ -156,6 +158,7 @@ const queueCalculatorOperation = (operation) => {
   if (calculator.queuedOperation) {
     performCalculatorAction('evaluate');
   }
+  const val = calculatorButtons.querySelector(`[data-operation='${operation}']`).textContent;
   const [current] = calculator.inputs;
   calculator.queuedOperation = operation;
   calculator.inputs.push({
@@ -167,7 +170,7 @@ const queueCalculatorOperation = (operation) => {
   calculator.decimalMode = false;
 
   currentView.textContent = 0;
-  operatorView.textContent = operation;
+  operatorView.textContent = val;
   previousView.textContent = calculator.getFormatted('previous');
 };
 
@@ -175,7 +178,7 @@ const updateCalculatorInput = (val) => {
   const [current] = calculator.inputs;
   let newVal = 0;
   if (calculator.decimalMode) {
-    newVal = concatenateNumbers(current.decimal, val);
+    newVal = chainNumbers(current.decimal, val);
     current.decimal = newVal;
     current.decimalLength += 1;
   } else {
@@ -184,7 +187,7 @@ const updateCalculatorInput = (val) => {
       calculator.lastAction = undefined;
     }
 
-    newVal = concatenateNumbers(current.integer, val);
+    newVal = chainNumbers(current.integer, val);
     current.integer = newVal;
   }
   currentView.textContent = calculator.getFormatted('current');
